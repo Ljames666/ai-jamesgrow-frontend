@@ -21,8 +21,8 @@ export default function LoginPage() {
             });
             saveToken(res.access_token);
             router.push("/chat");
-        } catch (err: any) {
-            alert(err.message || "Login falhou");
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "Login falhou");
         } finally {
             setLoading(false);
         }

@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
     title: "AI Chat",
-    description: "Chat com Gemini, GPT e Qwen",
+    description: "Chat com Gemini e GPT",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
