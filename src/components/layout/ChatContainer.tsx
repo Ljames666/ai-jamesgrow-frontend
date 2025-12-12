@@ -1,70 +1,68 @@
+// src/components/layout/ChatUI.tsx
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
-import { Message, AiModel } from "@/types";
+import { AiModel } from "@/types";
 import Sidebar from "./Sidebar";
 import MessageBubble from "../chat/MessageBubble";
 import InputBar from "../chat/InputBar";
-import { createSocket } from "@/lib/socket";
+import { useChatSocket } from "@/hooks/useChatSockets";
+import { useChatREST } from "@/hooks/useChatREST";
 
 export default function ChatUI() {
     const router = useRouter();
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [currentModel, setCurrentModel] = useState<AiModel>("gemini");
-    const [loading, setLoading] = useState(false);
+    const token = getToken();
+    const currentModel: AiModel = "gemini";
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
+    const {
+        messages: socketMessages,
+        loading: socketLoading,
+        connected,
+        sendMessage: sendSocketMessage,
+    } = useChatSocket(token, currentModel);
+
+    const {
+        messages: restMessages,
+        loading: restLoading,
+        sendMessage: sendRESTMessage,
+        loadHistory,
+    } = useChatREST(token, currentModel, router);
+
+    const useWebSocket = connected;
+    const messages = useWebSocket ? socketMessages : restMessages;
+    const loading = useWebSocket ? socketLoading : restLoading;
+
+    const handleSendMessage = async (content: string) => {
+        const scroll = messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (useWebSocket) {
+            try {
+                await sendSocketMessage(content);
+                scroll;
+            } catch {
+                await sendRESTMessage(content);
+                scroll;
+            }
+        } else {
+            await sendRESTMessage(content);
+            scroll;
+        }
+    };
+
     useEffect(() => {
-        const token = getToken();
         if (!token) {
             router.push("/login");
             return;
         }
-
-        const socket = createSocket(token);
-        socket.on("message", (msg: Message) => {
-            setMessages((prev) => [...prev, msg]);
-            setLoading(false);
-        });
-
-        socket.on("typing", () => {
-            setLoading(true);
-        });
-
-        socket.on("error", (err: any) => {
-            console.error("Socket error:", err);
-            setLoading(false);
-            alert(err.message);
-        });
-
-        // Carregar histórico inicial
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/messages?aiModel=${currentModel}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        })
-            .then((res) => res.json())
-            .then((data) => setMessages(data))
-            .catch(() => router.push("/login"));
-
-        return () => {
-            socket.disconnect();
-        };
-    }, [currentModel, router]);
-
-    const handleSendMessage = (content: string) => {
-        const socket = createSocket(getToken()!);
-        socket.emit("chat:message", { content, aiModel: currentModel });
-        setMessages((prev) => [...prev, { role: "user", content, aiModel: currentModel }]);
-    };
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+        // 🔹 Carregar histórico sempre que trocar modelo
+        loadHistory();
+    }, [messages, token, router, loadHistory]);
 
     return (
         <div className='flex h-screen bg-gray-100 dark:bg-gray-900'>
-            <Sidebar currentModel={currentModel} onModelChange={setCurrentModel} />
+            <Sidebar currentModel={currentModel} onModelChange={() => {}} />
             <div className='flex-1 flex flex-col'>
                 <div className='flex-1 p-4 overflow-y-auto'>
                     {messages.length === 0 ? (

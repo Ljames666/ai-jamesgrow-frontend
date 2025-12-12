@@ -1,6 +1,5 @@
-import { authOptions } from "@/lib/auth"; // não temos ainda, mas vamos simular
-import { api } from "@/lib/api";
-import { Message } from "@/types";
+"use client";
+
 import ChatUI from "@/components/layout/ChatContainer";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -11,7 +10,7 @@ async function getServerToken(cookies: string) {
     return null;
 }
 
-export default async function ChatPage() {
+export default function ChatPage() {
     // Como WebSocket é client-only, carregamos histórico no client
     // Mas mantemos a página protegida via rota (verificado no client)
     useAuth();
