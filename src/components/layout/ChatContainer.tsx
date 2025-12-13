@@ -1,7 +1,7 @@
 // src/components/layout/ChatUI.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import { AiModel } from "@/types";
@@ -10,11 +10,14 @@ import MessageBubble from "../chat/MessageBubble";
 import InputBar from "../chat/InputBar";
 import { useChatSocket } from "@/hooks/useChatSockets";
 import { useChatREST } from "@/hooks/useChatREST";
+import { useMessage } from "@/context/MessageContext";
 
 export default function ChatUI() {
     const router = useRouter();
     const token = getToken();
-    const currentModel: AiModel = "gemini";
+    const { showMessage } = useMessage();
+    const [currentModel, setCurrentModel] = useState<AiModel>("gemini");
+
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     const {
@@ -36,18 +39,21 @@ export default function ChatUI() {
     const loading = useWebSocket ? socketLoading : restLoading;
 
     const handleSendMessage = async (content: string) => {
-        const scroll = messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        const scroll = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        showMessage("Enviando...", "info", 1500);
         if (useWebSocket) {
             try {
                 await sendSocketMessage(content);
-                scroll;
+                scroll();
+                showMessage("Mensagem enviada com sucesso.", "success", 3000);
             } catch {
+                showMessage("Falha ao enviar via WebSocket. Usando REST API.", "warning", 3000);
                 await sendRESTMessage(content);
-                scroll;
+                scroll();
             }
         } else {
             await sendRESTMessage(content);
-            scroll;
+            scroll();
         }
     };
 
@@ -62,7 +68,12 @@ export default function ChatUI() {
 
     return (
         <div className='flex h-screen bg-gray-100 dark:bg-gray-900'>
-            <Sidebar currentModel={currentModel} onModelChange={() => {}} />
+            <Sidebar
+                currentModel={currentModel}
+                onModelChange={(model) => {
+                    setCurrentModel(model);
+                }}
+            />
             <div className='flex-1 flex flex-col'>
                 <div className='flex-1 p-4 overflow-y-auto'>
                     {messages.length === 0 ? (

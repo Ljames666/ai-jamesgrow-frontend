@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { Message, AiModel } from "@/types";
 import { createSocket } from "@/lib/sockets";
+import { useMessage } from "@/context/MessageContext";
 
 export function useChatSocket(token: string | null, currentModel: AiModel) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
     const [connected, setConnected] = useState(false);
-
+    const { showMessage } = useMessage();
     useEffect(() => {
         if (!token) return;
 
@@ -22,9 +23,13 @@ export function useChatSocket(token: string | null, currentModel: AiModel) {
             setLoading(false);
         });
 
-        socket.on("typing", () => setLoading(true));
+        socket.on("typing", () => {
+            showMessage("Digitando...", "info", 1500);
+            setLoading(true);
+        });
 
         socket.on("error", (err: Error) => {
+            showMessage(`WebSocket error: ${err.message}`, "error", 5000);
             console.error("WebSocket error:", err);
             setConnected(false);
             setLoading(false);

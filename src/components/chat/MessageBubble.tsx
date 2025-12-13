@@ -12,6 +12,13 @@ export default function MessageBubble({ message }: { message: Message }) {
                         : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none"
                 }`}
             >
+                <p>
+                    <strong>{isUser ? "Você" : "AI"}</strong>: &nbsp;
+                    {new Date(message.createdAt as string).toLocaleString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}
+                </p>
                 {message.content}
             </div>
         </div>

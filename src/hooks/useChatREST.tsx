@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { Message, AiModel } from "@/types";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { useMessage } from "@/context/MessageContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -12,7 +13,7 @@ export function useChatREST(
 ) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
-
+    const { showMessage } = useMessage();
     // 🔹 Carregar histórico
     const loadHistory = useCallback(async () => {
         if (!token) return;
@@ -23,8 +24,11 @@ export function useChatREST(
             if (!res.ok) throw new Error("Invalid token");
             const data = await res.json();
             setMessages(data);
-        } catch {
-            router.push("/login");
+        } catch (err) {
+            showMessage("Erro ao carregar histórico", "error");
+            if (err instanceof Error && err.message === "Invalid token") {
+                router.push("/");
+            }
         }
     }, [currentModel, router, token]);
 
@@ -57,7 +61,7 @@ export function useChatREST(
                 ]);
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err);
-                alert(`Erro: ${message}`);
+                showMessage(`Erro: ${message}`, "error", 5000);
                 setMessages((prev) => prev.slice(0, -1));
             } finally {
                 setLoading(false);
