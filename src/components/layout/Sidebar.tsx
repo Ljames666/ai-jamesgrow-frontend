@@ -41,6 +41,7 @@ export default function Sidebar({
                                     ? "bg-gray-200 dark:bg-gray-700"
                                     : "hover:bg-gray-100 dark:hover:bg-gray-700"
                             }`}
+                            disabled={model.id === "gpt" ? true : false}
                         >
                             <span className={`w-3 h-3 rounded-full mr-2 ${model.color}`}></span>
                             <span className='dark:text-white'>{model.name}</span>

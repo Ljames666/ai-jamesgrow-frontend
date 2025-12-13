@@ -58,7 +58,7 @@ const MessageContainer = ({
             {messages.map((msg) => (
                 <div
                     key={msg.id}
-                    className={`pointer-events-auto max-w-xs px-4 py-3 rounded-lg shadow-lg text-white animate-in slide-in-from-top-2 duration-300 ${
+                    className={`pointer-events-auto max-w-xs px-4 py-3 rounded-lg shadow-lg text-white animate-in slide-in-from-bottom-2 duration-300 ${
                         msg.type === "success"
                             ? "bg-green-600"
                             : msg.type === "error"
